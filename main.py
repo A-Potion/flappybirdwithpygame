@@ -16,12 +16,16 @@ class Bird(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.image, self.rect = load_image("bird.png", 0.35)
-        self.rect.x, self.rect.y = (width / 2) - (height / 2), (screen.get_height() / 2) - (self.image.get_size()[1] / 2)
+        self.rect.x, self.rect.y = (width / 2) - (self.image.get_size()[0] / 2), (screen.get_height() / 2) - (self.image.get_size()[1] / 2)
         self.area = self.rect
         self.mask = pygame.mask.from_surface(self.image)
 
     def up(self):
         self.rect.y += -300 * dt
+
+    def update(self):
+        if self.rect.topleft[1] >= height:
+            self.kill()
 
 class Pipe(pygame.sprite.Sprite):
 
@@ -45,7 +49,11 @@ data_dir = os.path.join(main_dir, "assets")
 
 size = width, height = 1000, 600
 bird_speed = [0, 2]
+font = pygame.font.Font("assets/comicnueue.ttf", 64)
+text = font.render("You've lost!", True, "crimson")
+textpos = (width / 2, height / 2)
 
+pygame.mouse.set_visible(False)
 pygame.display.set_caption("PyBird")
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
@@ -64,6 +72,8 @@ pipes = pygame.sprite.Group()
 pipe = Pipe()
 pipes.add(pipe)
 
+kaboom, kaboompos = load_image("kaboom.png", 0.12)
+
 bird = Bird()
 
 NEWPIPE = pygame.USEREVENT
@@ -71,6 +81,8 @@ NEWPIPE = pygame.USEREVENT
 pygame.display.set_icon(bird.image)
 
 pygame.time.set_timer(NEWPIPE, 2000)
+
+lost = False
 
 while running:
     screen.blit(bird.image, bird.rect)
@@ -82,14 +94,15 @@ while running:
             pipes.add(pipe)
 
 
-    scroll_x -= 1
-    bg_x -= 1
+
+
+
 
     screen.blit(bg, (scroll_x, 0))
     screen.blit(bg, (bg_x + width, 0))
 
-    if pygame.mask.Mask.overlap_mask(bird.mask, pipe.mask, (0, 0)) != None:
-        print("tes")
+
+
 
     if scroll_x <= -width:
         scroll_x = 0
@@ -97,22 +110,39 @@ while running:
     if bg_x <= -width:
         bg_x = 0
 
-    pipes.update()
+    if not lost:
+        collisionpoint = None
+        for x in pipes:
+            collisionpoint = pygame.sprite.collide_mask(bird, x)
+            if collisionpoint != None:
+                lost = True
+                kaboompos = bird.rect.topleft
+
+        pipes.update()
+        scroll_x -= 1
+        bg_x -= 1
+
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_SPACE]:
+            if bird.rect.top <= 0:
+                bird.rect.y += -2
+            else:
+                bird.up()
+        elif bird.rect.bottom >= height:
+            bird.rect.y += -2
+
+
     pipes.draw(screen)
 
     bird.rect = bird.rect.move(bird_speed)
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_SPACE]:
-        if bird.rect.top <= 0:
-            bird.rect.y += -2
-        else:
-            bird.up()
-    elif bird.rect.bottom >= height:
-        bird.rect.y += -2
 
-
-
+    bird.update()
     screen.blit(bird.image, bird.rect)
+
+    if lost:
+        screen.blit(kaboom, kaboompos)
+        screen.blit(text, textpos)
 
     pygame.display.flip()
     pygame.display.update()
