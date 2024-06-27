@@ -12,5 +12,6 @@ Install PyBird with Git!
 ```bash
   pip install pygame
   git clone https://github.com/A-Potion/pybird.git
+  cd pybird
   python main.py
 ```
