@@ -41,7 +41,13 @@ class Pipe(pygame.sprite.Sprite):
         if self.rect.x <= -self.image.get_width() - 10:
             self.kill()
 
+class Button(pygame.sprite.Sprite):
 
+    def __init__(self, txt):
+        pygame.sprite.Sprite.__init__(self)
+        self.surface = pygame.Surface((txt.get_width() + 8, txt.get_height() + 4))
+        self.surface.set_alpha(0)
+        self.rect = self.surface.get_rect()
 
 
 
@@ -67,7 +73,12 @@ againtxt = smallerfont.render("Play again?", True, "crimson")
 againpos = (width / 2 - againtxt.get_width() / 2, height / 2 + losttxt.get_height() - 35)
 
 yestxt = tinyfont.render("Yes", True, "Crimson")
-yespos = (againtxt.get_width() / 2, height / 2 + againtxt.get_height() + 45)
+yespos = ((width / 3) - yestxt.get_width() / 2, height / 2 + againtxt.get_height() + 45)
+yes_button = Button(yestxt)
+
+notxt = tinyfont.render("No", True, "Crimson")
+nopos = (2 * (width / 3) - notxt.get_width() / 2, height / 2 + againtxt.get_height() + 45)
+no_button = Button(notxt)
 
 bg = pygame.image.load("assets/background.png")
 
@@ -90,6 +101,7 @@ NEWPIPE = pygame.USEREVENT
 pygame.display.set_icon(bird.image)
 
 pygame.time.set_timer(NEWPIPE, 2000)
+sprites = (pipes, bird, no_button, yes_button)
 
 lost = False
 
@@ -101,6 +113,14 @@ while running:
         elif event.type == NEWPIPE:
             pipe = Pipe()
             pipes.add(pipe)
+        if event.type == pygame.MOUSEBUTTONUP and lost == True:
+            pos = pygame.mouse.get_pos()
+            if yes_button.rect.collidepoint(pos) != None:
+                print("click")
+                for x in sprites:
+                    x.kill()
+                lost = False
+
 
 
 
@@ -160,6 +180,9 @@ while running:
         screen.blit(losttxt, textpos)
         screen.blit(againtxt, againpos)
         screen.blit(yestxt, yespos)
+        screen.blit(yes_button.surface, (yespos[0] - 4, yespos[1] - 2))
+        screen.blit(notxt, nopos)
+        screen.blit(no_button.surface, (nopos[0] - 4, nopos[1] - 2))
         if pygame.mouse.get_visible() == False:
             pygame.mouse.set_visible(True)
 
