@@ -1,6 +1,7 @@
 import sys, pygame, random, os, math, time
 pygame.init()
 
+
 def load_image(name, scale):
     fullpath = os.path.join(data_dir, name)
     image = pygame.image.load(fullpath)
@@ -48,17 +49,25 @@ main_dir = os.path.split(os.path.abspath(__file__))[0]
 data_dir = os.path.join(main_dir, "assets")
 
 size = width, height = 1000, 600
-bird_speed = [0, 2]
-font = pygame.font.Font("assets/comicnueue.ttf", 64)
-text = font.render("You've lost!", True, "crimson")
-textpos = (width / 2, height / 2)
-
-pygame.mouse.set_visible(False)
+bird_speed = [0, 2.8]
 pygame.display.set_caption("PyBird")
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 running = True
 dt = 0
+
+regfont = pygame.font.Font("assets/pixeloidbold.ttf", 64)
+smallerfont = pygame.font.Font("assets/pixeloid.ttf", 48)
+tinyfont = pygame.font.Font("assets/pixeloid"".ttf", 32)
+
+losttxt = regfont.render("You've lost!", True, "crimson")
+textpos = (width / 2 - losttxt.get_width() / 2, height / 2 - losttxt.get_height() / 2)
+
+againtxt = smallerfont.render("Play again?", True, "crimson")
+againpos = (width / 2 - againtxt.get_width() / 2, height / 2 + losttxt.get_height() - 35)
+
+yestxt = tinyfont.render("Yes", True, "Crimson")
+yespos = (againtxt.get_width() / 2, height / 2 + againtxt.get_height() + 45)
 
 bg = pygame.image.load("assets/background.png")
 
@@ -111,12 +120,14 @@ while running:
         bg_x = 0
 
     if not lost:
+        if pygame.mouse.get_visible() == True:
+            pygame.mouse.set_visible(False)
         collisionpoint = None
         for x in pipes:
             collisionpoint = pygame.sprite.collide_mask(bird, x)
             if collisionpoint != None:
-                lost = True
                 kaboompos = bird.rect.topleft
+                lost = True
 
         pipes.update()
         scroll_x -= 1
@@ -127,9 +138,13 @@ while running:
         if keys[pygame.K_SPACE]:
             if bird.rect.top <= 0:
                 bird.rect.y += -2
+                kaboompos = bird.rect.topleft
+                lost = True
             else:
                 bird.up()
         elif bird.rect.bottom >= height:
+            kaboompos = bird.rect.topleft
+            lost = True
             bird.rect.y += -2
 
 
@@ -142,7 +157,11 @@ while running:
 
     if lost:
         screen.blit(kaboom, kaboompos)
-        screen.blit(text, textpos)
+        screen.blit(losttxt, textpos)
+        screen.blit(againtxt, againpos)
+        screen.blit(yestxt, yespos)
+        if pygame.mouse.get_visible() == False:
+            pygame.mouse.set_visible(True)
 
     pygame.display.flip()
     pygame.display.update()
