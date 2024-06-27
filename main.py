@@ -1,5 +1,10 @@
-import sys, pygame, random, os, math, time
+import pygame
+import random
+import os
+
 pygame.init()
+pygame.mixer.init()
+pygame.font.init()
 
 
 def load_image(name, scale):
@@ -12,6 +17,12 @@ def load_image(name, scale):
 
     return image, image.get_rect()
 
+def load_sound(sound):
+    fullpath = os.path.join(data_dir, sound)
+    sound = pygame.mixer.Sound(fullpath)
+
+    return sound
+
 class Bird(pygame.sprite.Sprite):
 
     def __init__(self):
@@ -23,6 +34,7 @@ class Bird(pygame.sprite.Sprite):
 
     def up(self):
         self.rect.y += -300 * dt
+
 
     def update(self):
         if self.rect.topleft[1] >= height:
@@ -80,6 +92,11 @@ notxt = tinyfont.render("No", True, "Crimson")
 nopos = (2 * (width / 3) - notxt.get_width() / 2, height / 2 + againtxt.get_height() + 45)
 no_button = Button(notxt)
 
+diesound = load_sound("die.wav")
+hitsound = load_sound("hit.wav")
+pointsound = load_sound("point.wav")
+
+
 bg = pygame.image.load("assets/background.png")
 
 bg = pygame.transform.scale(bg, (1100, 600))
@@ -101,9 +118,14 @@ NEWPIPE = pygame.USEREVENT
 pygame.display.set_icon(bird.image)
 
 pygame.time.set_timer(NEWPIPE, 2000)
-sprites = (pipes, bird, no_button, yes_button)
+sprites = (bird, no_button, yes_button)
 
 lost = False
+score = 0
+
+scorecounter = smallerfont.render(str(score), True, "white")
+scountpos = (width - scorecounter.get_width(), 0)
+
 
 while running:
     screen.blit(bird.image, bird.rect)
@@ -115,23 +137,22 @@ while running:
             pipes.add(pipe)
         if event.type == pygame.MOUSEBUTTONUP and lost == True:
             pos = pygame.mouse.get_pos()
-            if yes_button.rect.collidepoint(pos) != None:
-                print("click")
+            if yes_button.rect.collidepoint(pos) != False:
                 for x in sprites:
                     x.kill()
+                for x in pipes:
+                    x.kill()
+                bird = Bird()
+                score = 0
+                scorecounter = smallerfont.render(str(score), True, "white")
+                scountpos = (width - scorecounter.get_width(), 0)
                 lost = False
-
-
-
-
-
+            elif no_button.rect.collidepoint(pos) != False:
+                running = False
 
 
     screen.blit(bg, (scroll_x, 0))
     screen.blit(bg, (bg_x + width, 0))
-
-
-
 
     if scroll_x <= -width:
         scroll_x = 0
@@ -147,7 +168,9 @@ while running:
             collisionpoint = pygame.sprite.collide_mask(bird, x)
             if collisionpoint != None:
                 kaboompos = bird.rect.topleft
+                pygame.mixer.Sound.play(hitsound)
                 lost = True
+
 
         pipes.update()
         scroll_x -= 1
@@ -159,11 +182,13 @@ while running:
             if bird.rect.top <= 0:
                 bird.rect.y += -2
                 kaboompos = bird.rect.topleft
+                pygame.mixer.Sound.play(diesound)
                 lost = True
             else:
                 bird.up()
         elif bird.rect.bottom >= height:
             kaboompos = bird.rect.topleft
+            pygame.mixer.Sound.play(diesound)
             lost = True
             bird.rect.y += -2
 
@@ -173,7 +198,17 @@ while running:
     bird.rect = bird.rect.move(bird_speed)
 
     bird.update()
+
     screen.blit(bird.image, bird.rect)
+
+    screen.blit(scorecounter, scountpos)
+
+    for x in pipes:
+        if x.rect.topright[0] == bird.rect.topleft[0]:
+            score += 1
+            scorecounter = smallerfont.render(str(score), True, "white")
+            scountpos = (width - scorecounter.get_width(), 0)
+            pygame.mixer.Sound.play(pointsound)
 
     if lost:
         screen.blit(kaboom, kaboompos)
@@ -181,8 +216,10 @@ while running:
         screen.blit(againtxt, againpos)
         screen.blit(yestxt, yespos)
         screen.blit(yes_button.surface, (yespos[0] - 4, yespos[1] - 2))
+        yes_button.rect.topleft = (yespos[0] - 4, yespos[1] - 2)
         screen.blit(notxt, nopos)
         screen.blit(no_button.surface, (nopos[0] - 4, nopos[1] - 2))
+        no_button.rect.topleft = (nopos[0] - 4, nopos[1] - 2)
         if pygame.mouse.get_visible() == False:
             pygame.mouse.set_visible(True)
 
